@@ -1,103 +1,151 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import Image from 'next/image';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleGenerateImage = async () => {
+    setIsGenerating(true);
+    
+    // 生成中の演出のため少し待機
+    setTimeout(() => {
+      setGeneratedImage('/bg_sakura_night.jpg');
+      setIsGenerating(false);
+    }, 1500);
+  };
+
+  const handleDownload = async () => {
+    if (!generatedImage) return;
+    
+    try {
+      // 画像を取得
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      
+      // ダウンロード用のURLを作成
+      const url = window.URL.createObjectURL(blob);
+      
+      // ダウンロード用のリンクを作成
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // ファイル名を生成（現在の日時を使用）
+      const now = new Date();
+      const timestamp = now.toISOString().split('T')[0]; // YYYY-MM-DD形式
+      link.download = `memento-${timestamp}.jpg`;
+      
+      // ダウンロードを実行
+      document.body.appendChild(link);
+      link.click();
+      
+      // クリーンアップ
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('ダウンロードエラー:', error);
+      alert('ダウンロードに失敗しました。もう一度お試しください。');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8 pt-8">
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">
+            Memento
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 text-lg">
+            一日の振り返りを美しい画像に
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+          {/* 左側：コントロールパネル */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+            <div className="space-y-6">
+              <div className="text-gray-500 dark:text-gray-400">
+                <p className="mb-2 text-lg font-medium">今日はどんな一日でしたか？</p>
+                <p className="text-sm">あなたの思い出を素敵な画像として残しましょう</p>
+              </div>
+              
+              <button
+                onClick={handleGenerateImage}
+                disabled={isGenerating}
+                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:transform-none disabled:hover:scale-100"
+              >
+                {isGenerating ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    生成中...
+                  </div>
+                ) : (
+                  '画像を生成する'
+                )}
+              </button>
+              
+              <div className="text-xs text-gray-400 dark:text-gray-500">
+                あなたの一日の振り返りをAIが美しい画像に変換します
+              </div>
+            </div>
+          </div>
+
+          {/* 右側：画像プレビュー */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+              生成された画像
+            </h2>
+            
+            <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden flex items-center justify-center">
+              {generatedImage ? (
+                <div className="relative w-full h-full">
+                  <Image
+                    src={generatedImage}
+                    alt="生成された振り返り画像"
+                    fill
+                    className="object-cover rounded-xl"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-gray-400 dark:text-gray-500">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm">
+                    「画像を生成する」ボタンを押すと<br />
+                    ここに画像が表示されます
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            {generatedImage && (
+              <div className="mt-4 flex gap-2">
+                <button 
+                  onClick={handleDownload}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  ダウンロード
+                </button>
+                <button 
+                  onClick={() => setGeneratedImage(null)}
+                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors"
+                >
+                  クリア
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
