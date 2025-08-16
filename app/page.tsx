@@ -6,15 +6,40 @@ import Image from 'next/image';
 export default function Home() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [reflectionText, setReflectionText] = useState<string>('');
+  const [lastGeneratedText, setLastGeneratedText] = useState<string>('');
 
   const handleGenerateImage = async () => {
+    if (!reflectionText.trim()) {
+      alert('振り返りテキストを入力してください');
+      return;
+    }
+
     setIsGenerating(true);
     
-    // 生成中の演出のため少し待機
-    setTimeout(() => {
-      setGeneratedImage('/bg_sakura_night.jpg');
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: reflectionText }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '画像生成に失敗しました');
+      }
+
+      setGeneratedImage(data.imageUrl);
+      setLastGeneratedText(reflectionText);
+    } catch (error) {
+      console.error('画像生成エラー:', error);
+      alert('画像生成に失敗しました。もう一度お試しください。');
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
   };
 
   const handleDownload = async () => {
@@ -71,6 +96,34 @@ export default function Home() {
                 <p className="text-sm">あなたの思い出を素敵な画像として残しましょう</p>
               </div>
               
+              <div className="space-y-3">
+                <label htmlFor="reflection" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  振り返りテキスト
+                </label>
+                <textarea
+                  id="reflection"
+                  value={reflectionText}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 500) {
+                      setReflectionText(e.target.value);
+                    }
+                  }}
+                  placeholder="今日の出来事、感じたこと、学んだことなどを自由に書いてください...&#10;&#10;例：&#10;・今日は友達とカフェに行って楽しい時間を過ごしました&#10;・新しいプロジェクトが始まって少し不安だけど頑張りたいです&#10;・散歩中に美しい夕焼けを見て心が穏やかになりました"
+                  rows={6}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none"
+                  disabled={isGenerating}
+                />
+                <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                  <span>{reflectionText.length}/500文字</span>
+                  <span className="flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    感情や体験を具体的に書くとより良い画像が生成されます
+                  </span>
+                </div>
+              </div>
+              
               <button
                 onClick={handleGenerateImage}
                 disabled={isGenerating}
@@ -125,22 +178,35 @@ export default function Home() {
             </div>
             
             {generatedImage && (
-              <div className="mt-4 flex gap-2">
-                <button 
-                  onClick={handleDownload}
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  ダウンロード
-                </button>
-                <button 
-                  onClick={() => setGeneratedImage(null)}
-                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors"
-                >
-                  クリア
-                </button>
+              <div className="mt-4 space-y-3">
+                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    生成元のテキスト:
+                  </h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-3">
+                    {lastGeneratedText}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleDownload}
+                    className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    ダウンロード
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setGeneratedImage(null);
+                      setLastGeneratedText('');
+                    }}
+                    className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors"
+                  >
+                    クリア
+                  </button>
+                </div>
               </div>
             )}
           </div>
